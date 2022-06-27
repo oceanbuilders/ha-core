@@ -1,6 +1,5 @@
 /config
 config2/*
-%Lenovo%/
 tests/testing_config/deps
 tests/testing_config/home-assistant.log*
 
@@ -38,6 +37,7 @@ Icon
 # Packages
 *.egg
 *.egg-info
+%Lenovo%
 dist
 build
 eggs
