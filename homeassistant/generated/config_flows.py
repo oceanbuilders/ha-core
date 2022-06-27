@@ -142,6 +142,7 @@ FLOWS = {
         "habitica",
         "hangouts",
         "harmony",
+        "hello_world",
         "heos",
         "here_travel_time",
         "hisense_aehw4a1",

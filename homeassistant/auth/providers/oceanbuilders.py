@@ -1,4 +1,7 @@
-"""Home Assistant auth provider."""
+# type: ignore
+# flake8: noqa
+
+"""Ocean Builders auth provider."""
 from __future__ import annotations
 
 import asyncio
@@ -8,8 +11,10 @@ import logging
 from typing import Any, cast
 
 import bcrypt
+import boto3
 import voluptuous as vol
 
+from homeassistant.components import person
 from homeassistant.const import CONF_ID
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.data_entry_flow import FlowResult
@@ -19,8 +24,15 @@ from homeassistant.helpers.storage import Store
 from . import AUTH_PROVIDER_SCHEMA, AUTH_PROVIDERS, AuthProvider, LoginFlow
 from ..models import Credentials, UserMeta
 
+LOGGER = logging.getLogger(__name__)
+
 STORAGE_VERSION = 1
-STORAGE_KEY = "auth_provider.homeassistant"
+STORAGE_KEY = "auth_provider.oceanbuilders"
+AWS_ACCESS_KEY_ID = "aws_access_key_id"
+AWS_SECRET_ACCESS_KEY = "aws_secret_access_key"
+CLIENT_ID = "ClientId"
+ROLE_ARN = "role_arn"
+REGION_NAME = "region_name"
 
 
 def _disallow_id(conf: dict[str, Any]) -> dict[str, Any]:
@@ -31,16 +43,24 @@ def _disallow_id(conf: dict[str, Any]) -> dict[str, Any]:
     return conf
 
 
-CONFIG_SCHEMA = vol.All(AUTH_PROVIDER_SCHEMA, _disallow_id)
+CONFIG_SCHEMA = vol.All(
+    AUTH_PROVIDER_SCHEMA.extend(
+        {
+            vol.Required(AWS_ACCESS_KEY_ID): str,
+            vol.Required(AWS_SECRET_ACCESS_KEY): str,
+            vol.Required(CLIENT_ID): str,
+        }
+    ),
+    _disallow_id,
+)
 
 
 @callback
 def async_get_provider(hass: HomeAssistant) -> HassAuthProvider:
     """Get the provider."""
     for prv in hass.auth.auth_providers:
-        if prv.type == "homeassistant":
+        if prv.type == "oceanbuilders":
             return cast(HassAuthProvider, prv)
-
     raise RuntimeError("Provider not found")
 
 
@@ -69,13 +89,14 @@ class Data:
         # and will compare usernames case-insensitive.
         # Remove in 2020 or when we launch 1.0.
         self.is_legacy = False
+        self.session = None or boto3.session.Session
+        self.login_response = None
 
     @callback
     def normalize_username(self, username: str) -> str:
         """Normalize a username based on the mode."""
         if self.is_legacy:
             return username
-
         return username.strip().casefold()
 
     async def async_load(self) -> None:
@@ -86,10 +107,8 @@ class Data:
             data = {"users": []}
 
         seen: set[str] = set()
-
         for user in data["users"]:
             username = user["username"]
-
             # check if we have duplicates
             if (folded := username.casefold()) in seen:
                 self.is_legacy = True
@@ -115,39 +134,14 @@ class Data:
                     "space. Please change the username: '%s'.",
                     username,
                 )
-                break
 
+                break
         self._data = data
 
     @property
     def users(self) -> list[dict[str, str]]:
         """Return users."""
-        return self._data["users"]  # type: ignore[index,no-any-return]
-
-    def validate_login(self, username: str, password: str) -> None:
-        """Validate a username and password.
-
-        Raises InvalidAuth if auth invalid.
-        """
-        username = self.normalize_username(username)
-        dummy = b"$2b$12$CiuFGszHx9eNHxPuQcwBWez4CwDTOcLTX5CbOpV6gef2nYuXkY7BO"
-        found = None
-
-        # Compare all users to avoid timing attacks.
-        for user in self.users:
-            if self.normalize_username(user["username"]) == username:
-                found = user
-
-        if found is None:
-            # check a hash to make timing the same as if user was found
-            bcrypt.checkpw(b"foo", dummy)
-            raise InvalidAuth
-
-        user_hash = base64.b64decode(found["password"])
-
-        # bcrypt.checkpw is timing-safe
-        if not bcrypt.checkpw(password.encode(), user_hash):
-            raise InvalidAuth
+        return self._data["users"]
 
     def hash_password(self, password: str, for_storage: bool = False) -> bytes:
         """Encode a password."""
@@ -208,18 +202,75 @@ class Data:
         if self._data is not None:
             await self._store.async_save(self._data)
 
+    def get_aws_credentials_from_role(
+        self, role_info: str, access_key_id: str, secret_key: str
+    ) -> None:
+        """Using AWS role, get credentials"""
+        client = boto3.client(
+            "sts",
+            aws_access_key_id=access_key_id,
+            aws_secret_access_key=secret_key,
+        )
+        credentials = client.assume_role(**role_info)
 
-@AUTH_PROVIDERS.register("homeassistant")
+        session = boto3.session.Session(
+            aws_access_key_id=credentials["Credentials"]["AccessKeyId"],
+            aws_secret_access_key=credentials["Credentials"]["SecretAccessKey"],
+            aws_session_token=credentials["Credentials"]["SessionToken"],
+        )
+        self.session = session
+
+    def authenticate_with_cognito(
+        self, username: str, password: str, client_id: str, region_name: str
+    ) -> None:
+        """
+        Authentication with Amazon Cognito
+        """
+        username = self.normalize_username(username)
+        # pylint: disable=no-value-for-parameter
+        cognito_client = self.session.client("cognito-idp", region_name=region_name)
+        response = cognito_client.initiate_auth(
+            ClientId=client_id,
+            AuthFlow="USER_PASSWORD_AUTH",
+            AuthParameters={"USERNAME": username, "PASSWORD": password},
+        )
+        # pylint: disable=hass-logger-capital
+        LOGGER.info("login response %s", type(response))
+        self.login_response = response
+
+    async def get_user_id(self, username: str) -> str | None:
+        """
+        Fetch user's id from username
+        """
+        users = await self.hass.auth.async_get_users()
+        user_id = None
+        for user in users:
+            if len(user.credentials) != 0:
+                if username in user.name or user.credentials[0].data["username"]:
+                    user_id = user.id
+
+        return user_id
+
+    async def asynccreate_person(self, username: str) -> None:
+        """
+        Create person entity
+        """
+        user_id = await self.get_user_id(username)
+        await person.async_create_person(self.hass, username, user_id=user_id)
+
+
+@AUTH_PROVIDERS.register("oceanbuilders")
 class HassAuthProvider(AuthProvider):
     """Auth provider based on a local storage of users in Home Assistant config dir."""
 
-    DEFAULT_TITLE = "Home Assistant Local"
+    DEFAULT_TITLE = "Ocean Builders"
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize an Home Assistant auth provider."""
         super().__init__(*args, **kwargs)
         self.data: Data | None = None
         self._init_lock = asyncio.Lock()
+        self.all_states = None
 
     async def async_initialize(self) -> None:
         """Initialize the auth provider."""
@@ -230,6 +281,7 @@ class HassAuthProvider(AuthProvider):
             data = Data(self.hass)
             await data.async_load()
             self.data = data
+            self.all_states = self.data.hass.states.async_all()
 
     async def async_login_flow(self, context: dict[str, Any] | None) -> LoginFlow:
         """Return a flow to login."""
@@ -237,12 +289,33 @@ class HassAuthProvider(AuthProvider):
 
     async def async_validate_login(self, username: str, password: str) -> None:
         """Validate a username and password."""
+
         if self.data is None:
             await self.async_initialize()
             assert self.data is not None
 
+        role_info = {
+            "RoleArn": self.config[ROLE_ARN],
+            "RoleSessionName": "temp-session-ha",
+        }
+
         await self.hass.async_add_executor_job(
-            self.data.validate_login, username, password
+            self.data.get_aws_credentials_from_role,
+            role_info,
+            self.config[AWS_ACCESS_KEY_ID],
+            self.config[AWS_SECRET_ACCESS_KEY],
+        )
+
+        await self.hass.async_add_executor_job(
+            self.data.authenticate_with_cognito,
+            username,
+            password,
+            self.config[CLIENT_ID],
+            self.config[REGION_NAME],
+        )
+
+        self.hass.bus.async_listen_once(
+            "user_added", self.data.asynccreate_person(username)
         )
 
     async def async_add_auth(self, username: str, password: str) -> None:
@@ -283,7 +356,7 @@ class HassAuthProvider(AuthProvider):
             assert self.data is not None
 
         norm_username = self.data.normalize_username
-        username = norm_username(flow_result["username"])
+        username = norm_username(flow_result["email"])
 
         for credential in await self.async_credentials():
             if norm_username(credential.data["username"]) == username:
@@ -324,7 +397,7 @@ class HassLoginFlow(LoginFlow):
         if user_input is not None:
             try:
                 await cast(HassAuthProvider, self._auth_provider).async_validate_login(
-                    user_input["username"], user_input["password"]
+                    user_input["email"], user_input["password"]
                 )
             except InvalidAuth:
                 errors["base"] = "invalid_auth"
@@ -337,7 +410,7 @@ class HassLoginFlow(LoginFlow):
             step_id="init",
             data_schema=vol.Schema(
                 {
-                    vol.Required("username"): str,
+                    vol.Required("email"): str,
                     vol.Required("password"): str,
                 }
             ),

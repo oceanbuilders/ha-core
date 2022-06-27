@@ -426,6 +426,8 @@ build.json @home-assistant/supervisor
 /homeassistant/components/hassio/ @home-assistant/supervisor
 /tests/components/hassio/ @home-assistant/supervisor
 /homeassistant/components/heatmiser/ @andylockran
+/homeassistant/components/hello_world/ @siddiqss
+/tests/components/hello_world/ @siddiqss
 /homeassistant/components/heos/ @andrewsayre
 /tests/components/heos/ @andrewsayre
 /homeassistant/components/here_travel_time/ @eifinger
