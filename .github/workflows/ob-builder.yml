@@ -37,7 +37,7 @@ jobs:
         uses: actions/checkout@v3.0.2
 
       - name: Download nightly wheels of frontend
-        # if: input.channel == 'dev'
+        # if: inputs.channel == 'dev'
         uses: dawidd6/action-download-artifact@v2
         with:
           github_token: ${{secrets.GITHUB_TOKEN}}
@@ -48,7 +48,7 @@ jobs:
           name: wheels
 
       - name: Set up Python ${{ env.DEFAULT_PYTHON }}
-        # if: input.channel == 'dev'
+        # if: inputs.channel == 'dev'
         uses: actions/setup-python@v4.1.0
         with:
           python-version: ${{ env.DEFAULT_PYTHON }}
@@ -76,14 +76,14 @@ jobs:
         with:
           args: |
             $BUILD_ARGS \
-            --${{ input.arch }} \
+            --${{ inputs.arch }} \
             --target /data \
-            --generic ${{ input.version }}
+            --generic ${{ inputs.version }}
         # env:
         #   CAS_API_KEY: ${{ secrets.CAS_TOKEN }}
 
   build_machine:
-    name: Build ${{ input.machine }} machine core image
+    name: Build ${{ inputs.machine }} machine core image
     if: github.repository_owner == 'oceanbuilders'
     needs: "build_base"
     runs-on: ubuntu-latest
@@ -94,9 +94,9 @@ jobs:
       - name: Set build additional args
         run: |
           # Create general tags
-          if [[ "${{ input.version }}" =~ d ]]; then
+          if [[ "${{ inputs.version }}" =~ d ]]; then
             echo "BUILD_ARGS=--additional-tag dev" >> $GITHUB_ENV
-          elif [[ "${{ input.version }}" =~ b ]]; then
+          elif [[ "${{ inputs.version }}" =~ b ]]; then
             echo "BUILD_ARGS=--additional-tag beta" >> $GITHUB_ENV
           else
             echo "BUILD_ARGS=--additional-tag stable" >> $GITHUB_ENV
@@ -120,6 +120,6 @@ jobs:
           args: |
             $BUILD_ARGS \
             --target /data/machine \
-            --machine "${{ input.version }}=${{ input.machine }}"
+            --machine "${{ inputs.version }}=${{ inputs.machine }}"
         # env:
         #   CAS_API_KEY: ${{ secrets.CAS_TOKEN }}
