@@ -40,7 +40,7 @@ jobs:
         # if: inputs.channel == 'dev'
         uses: dawidd6/action-download-artifact@v2
         with:
-          github_token: ${{secrets.OB_BUILD_TOKEN}}
+          github_token: ${{secrets.GITHUB_TOKEN}}
           repo: oceanbuilders/frontend
           branch: dev
           workflow: ob-nightly.yaml
@@ -69,7 +69,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
-          password: ${{ secrets.OB_BUILD_TOKEN }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build base image
         uses: home-assistant/builder@2022.07.0
