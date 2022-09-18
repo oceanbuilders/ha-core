@@ -23,6 +23,11 @@ on:
         default: 'dev'
         required: true
         type: string
+      image_repo:
+        description: 'The dockerhub repo to upload the images'
+        default: 'elwoodhouse/ob-test-build'
+        required: true
+        type: string
 env:
   BUILD_TYPE: core
   DEFAULT_PYTHON: 3.9
@@ -124,7 +129,7 @@ jobs:
             $BUILD_ARGS \
             --target /data/machine \
             --machine "${{ inputs.version }}=${{ inputs.machine }}" \
-            --docker-hub ${{ secrets.DOCKERHUB_REPOSITORY }} \
+            --docker-hub ${{ inputs.image_repo }} \
             --docker-user ${{ secrets.DOCKERHUB_USERNAME }} \
             --docker-password ${{ secrets.DOCKERHUB_TOKEN }}
         # env:
