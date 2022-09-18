@@ -30,7 +30,7 @@ on:
         type: string
       image_repo:
         description: 'The dockerhub spacename to upload the images'
-        default: 'ob-test-build'
+        default: 'elwoodhouse'
         required: true
         type: string
 env:
@@ -88,7 +88,7 @@ jobs:
             $BUILD_ARGS \
             --${{ inputs.arch }} \
             --target /data \
-            --generic ${{ inputs.version }} \
+            --base ${{ inputs.version }} \
             --docker-hub ${{ inputs.image_repo }} \
             --docker-user ${{ inputs.dockerhub_username }} \
             --docker-password ${{ secrets.DOCKERHUB_TOKEN }}
