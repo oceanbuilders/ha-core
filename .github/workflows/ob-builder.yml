@@ -84,7 +84,7 @@ jobs:
             --${{ inputs.arch }} \
             --target /data \
             --generic ${{ inputs.version }} \
-            --docker-hub ${{ secrets.DOCKERHUB_REPOSITORY }} \
+            --docker-hub ${{ inputs.image_repo }} \
             --docker-user ${{ secrets.DOCKERHUB_USERNAME }} \
             --docker-password ${{ secrets.DOCKERHUB_TOKEN }}
         # env:
