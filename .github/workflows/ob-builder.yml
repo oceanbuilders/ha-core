@@ -61,8 +61,8 @@ jobs:
       - name: Login to DockerHub
         uses: docker/login-action@v2.0.0
         with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       # - name: Login to GitHub Container Registry
       #   uses: docker/login-action@v2.0.0
@@ -79,9 +79,9 @@ jobs:
             --${{ inputs.arch }} \
             --target /data \
             --generic ${{ inputs.version }} \
-            --docker-hub ${{ secrets.DOCKER_HUB_REPOSITORY }} \
-            --docker-user ${{ secrets.DOCKER_HUB_USERNAME }} \
-            --docker-password ${{ secrets.DOCKER_HUB_TOKEN }}
+            --docker-hub ${{ secrets.DOCKERHUB_REPOSITORY }} \
+            --docker-user ${{ secrets.DOCKERHUB_USERNAME }} \
+            --docker-password ${{ secrets.DOCKERHUB_TOKEN }}
         # env:
         #   CAS_API_KEY: ${{ secrets.CAS_TOKEN }}
 
@@ -124,8 +124,8 @@ jobs:
             $BUILD_ARGS \
             --target /data/machine \
             --machine "${{ inputs.version }}=${{ inputs.machine }}" \
-            --docker-hub ${{ secrets.DOCKER_HUB_REPOSITORY }} \
-            --docker-user ${{ secrets.DOCKER_HUB_USERNAME }} \
-            --docker-password ${{ secrets.DOCKER_HUB_TOKEN }}
+            --docker-hub ${{ secrets.DOCKERHUB_REPOSITORY }} \
+            --docker-user ${{ secrets.DOCKERHUB_USERNAME }} \
+            --docker-password ${{ secrets.DOCKERHUB_TOKEN }}
         # env:
         #   CAS_API_KEY: ${{ secrets.CAS_TOKEN }}
