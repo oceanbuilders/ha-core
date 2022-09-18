@@ -23,9 +23,14 @@ on:
         default: 'dev'
         required: true
         type: string
+      dockerhub_username:
+        description: 'Dockerhub user to upload the images'
+        default: 'elwoodhouse'
+        required: true
+        type: string
       image_repo:
         description: 'The dockerhub repo to upload the images'
-        default: 'elwoodhouse/ob-test-build'
+        default: 'ob-test-build'
         required: true
         type: string
 env:
@@ -85,7 +90,7 @@ jobs:
             --target /data \
             --generic ${{ inputs.version }} \
             --docker-hub ${{ inputs.image_repo }} \
-            --docker-user ${{ secrets.DOCKERHUB_USERNAME }} \
+            --docker-user ${{ inputs.dockerhub_username }} \
             --docker-password ${{ secrets.DOCKERHUB_TOKEN }}
         # env:
         #   CAS_API_KEY: ${{ secrets.CAS_TOKEN }}
@@ -130,7 +135,7 @@ jobs:
             --target /data/machine \
             --machine "${{ inputs.version }}=${{ inputs.machine }}" \
             --docker-hub ${{ inputs.image_repo }} \
-            --docker-user ${{ secrets.DOCKERHUB_USERNAME }} \
+            --docker-user ${{ inputs.dockerhub_username }} \
             --docker-password ${{ secrets.DOCKERHUB_TOKEN }}
         # env:
         #   CAS_API_KEY: ${{ secrets.CAS_TOKEN }}
