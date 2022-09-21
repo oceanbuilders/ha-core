@@ -82,13 +82,13 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build base image
-        uses: home-assistant/builder@2022.07.0
+        uses: oceanbuilders/ha-builder@2022.07.0
         with:
           args: |
             $BUILD_ARGS \
             --${{ inputs.arch }} \
             --target /data \
-            --base ${{ inputs.version }} \
+            --generic ${{ inputs.version }} \
             --docker-hub ${{ inputs.image_repo }} \
             --docker-user ${{ inputs.dockerhub_username }} \
             --docker-password ${{ secrets.DOCKERHUB_TOKEN }}
