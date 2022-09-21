@@ -82,7 +82,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build base image
-        uses: oceanbuilders/ha-builder@2022.07.0
+        uses: oceanbuilders/ha-builder
         with:
           args: |
             $BUILD_ARGS \
