@@ -98,7 +98,7 @@ jobs:
   build_machine:
     name: Build ${{ inputs.machine }} machine core image
     if: github.repository_owner == 'oceanbuilders'
-    needs: "build_base"
+    # needs: "build_base"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repository
