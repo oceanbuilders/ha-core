@@ -1,7 +1,6 @@
 image: homeassistant/{machine}-homeassistant
-shadow_repository: ghcr.io/home-assistant
 build_from:
-  aarch64: "ghcr.io/home-assistant/aarch64-homeassistant:"
+  aarch64: "hub.docker.com/r/elwoodhouse/aarch64-homeassistant:0.1"
   armv7: "ghcr.io/home-assistant/armv7-homeassistant:"
   armhf: "ghcr.io/home-assistant/armhf-homeassistant:"
   amd64: "ghcr.io/home-assistant/amd64-homeassistant:"

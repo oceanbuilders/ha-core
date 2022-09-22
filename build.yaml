@@ -1,5 +1,4 @@
 image: homeassistant/{arch}-homeassistant
-shadow_repository: ghcr.io/home-assistant
 build_from:
   aarch64: ghcr.io/home-assistant/aarch64-homeassistant-base:2022.06.1
   armhf: ghcr.io/home-assistant/armhf-homeassistant-base:2022.06.1
