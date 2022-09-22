@@ -38,67 +38,67 @@ env:
   DEFAULT_PYTHON: 3.9
 
 jobs:
-  build_base:
-    name: Build ${{ inputs.arch }} base core image
-    if: github.repository_owner == 'oceanbuilders'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout the repository
-        uses: actions/checkout@v3.0.2
+  # build_base:
+  #   name: Build ${{ inputs.arch }} base core image
+  #   if: github.repository_owner == 'oceanbuilders'
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout the repository
+  #       uses: actions/checkout@v3.0.2
 
-      - name: Download nightly wheels of frontend
-        # if: inputs.channel == 'dev'
-        uses: dawidd6/action-download-artifact@v2
-        with:
-          github_token: ${{secrets.GITHUB_TOKEN}}
-          repo: oceanbuilders/frontend
-          branch: dev
-          workflow: ob-nightly.yaml
-          workflow_conclusion: success
-          name: wheels
+  #     - name: Download nightly wheels of frontend
+  #       # if: inputs.channel == 'dev'
+  #       uses: dawidd6/action-download-artifact@v2
+  #       with:
+  #         github_token: ${{secrets.GITHUB_TOKEN}}
+  #         repo: oceanbuilders/frontend
+  #         branch: dev
+  #         workflow: ob-nightly.yaml
+  #         workflow_conclusion: success
+  #         name: wheels
 
-      - name: Set up Python ${{ env.DEFAULT_PYTHON }}
-        # if: inputs.channel == 'dev'
-        uses: actions/setup-python@v4.1.0
-        with:
-          python-version: ${{ env.DEFAULT_PYTHON }}
+  #     - name: Set up Python ${{ env.DEFAULT_PYTHON }}
+  #       # if: inputs.channel == 'dev'
+  #       uses: actions/setup-python@v4.1.0
+  #       with:
+  #         python-version: ${{ env.DEFAULT_PYTHON }}
 
-      - name: Write meta info file
-        shell: bash
-        run: |
-          echo "${{ github.sha }};${{ github.ref }};${{ github.event_name }};${{ github.actor }}" > rootfs/OFFICIAL_IMAGE
+  #     - name: Write meta info file
+  #       shell: bash
+  #       run: |
+  #         echo "${{ github.sha }};${{ github.ref }};${{ github.event_name }};${{ github.actor }}" > rootfs/OFFICIAL_IMAGE
 
-      - name: Login to DockerHub
-        uses: docker/login-action@v2.0.0
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+  #     - name: Login to DockerHub
+  #       uses: docker/login-action@v2.0.0
+  #       with:
+  #         username: ${{ secrets.DOCKERHUB_USERNAME }}
+  #         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # - name: Login to GitHub Container Registry
-      #   uses: docker/login-action@v2.0.0
-      #   with:
-      #     registry: ghcr.io
-      #     username: ${{ github.repository_owner }}
-      #     password: ${{ secrets.GITHUB_TOKEN }}
+  #     # - name: Login to GitHub Container Registry
+  #     #   uses: docker/login-action@v2.0.0
+  #     #   with:
+  #     #     registry: ghcr.io
+  #     #     username: ${{ github.repository_owner }}
+  #     #     password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build base image
-        uses: home-assistant/builder@2022.09.0
-        with:
-          args: |
-            $BUILD_ARGS \
-            --${{ inputs.arch }} \
-            --target /data \
-            --generic ${{ inputs.version }} \
-            --docker-hub ${{ inputs.image_repo }} \
-            --docker-user ${{ inputs.dockerhub_username }} \
-            --docker-password ${{ secrets.DOCKERHUB_TOKEN }}
-        # env:
-        #   CAS_API_KEY: ${{ secrets.CAS_TOKEN }}
+  #     - name: Build base image
+  #       uses: home-assistant/builder@2022.09.0
+  #       with:
+  #         args: |
+  #           $BUILD_ARGS \
+  #           --${{ inputs.arch }} \
+  #           --target /data \
+  #           --generic ${{ inputs.version }} \
+  #           --docker-hub ${{ inputs.image_repo }} \
+  #           --docker-user ${{ inputs.dockerhub_username }} \
+  #           --docker-password ${{ secrets.DOCKERHUB_TOKEN }}
+  #       # env:
+  #       #   CAS_API_KEY: ${{ secrets.CAS_TOKEN }}
 
   build_machine:
     name: Build ${{ inputs.machine }} machine core image
     if: github.repository_owner == 'oceanbuilders'
-    needs: "build_base"
+    # needs: "build_base"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repository
