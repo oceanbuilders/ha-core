@@ -1,6 +1,6 @@
 image: homeassistant/{machine}-homeassistant
 build_from:
-  aarch64: "elwoodhouse/aarch64-homeassistant:0.1"
+  aarch64: "elwoodhouse/aarch64-homeassistant:"
   armv7: "ghcr.io/home-assistant/armv7-homeassistant:"
   armhf: "ghcr.io/home-assistant/armhf-homeassistant:"
   amd64: "ghcr.io/home-assistant/amd64-homeassistant:"
